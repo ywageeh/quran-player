@@ -426,6 +426,23 @@
       text-shadow: none;
       user-select: none;
       opacity: 0.55;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+    }
+
+    .qcf-word[data-type="word"].is-concealed.is-peeking,
+    .qcf-word[data-type="word"].is-concealed.is-peeking.is-active {
+      filter: none;
+      color: var(--ink);
+      opacity: 1;
+    }
+
+    .qcf-word[data-type="word"].is-concealed.is-peeking {
+      background: color-mix(in oklch, var(--emerald) 12%, transparent);
+    }
+
+    .qcf-word[data-type="word"].is-concealed.is-peeking.is-active {
+      background: color-mix(in oklch, var(--gold) 38%, transparent);
     }
 
     @media (hover: hover) and (pointer: fine) {
@@ -439,6 +456,52 @@
       .qcf-word[data-type="word"].is-concealed.is-active:hover {
         background: color-mix(in oklch, var(--gold) 38%, transparent);
       }
+    }
+
+    .update-toast {
+      position: fixed;
+      z-index: 50;
+      inset-inline: 0.85rem;
+      bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid color-mix(in oklch, var(--emerald) 35%, var(--line));
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transform: translateY(120%);
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        transform 0.3s var(--ease),
+        opacity 0.3s var(--ease),
+        visibility 0.3s var(--ease);
+    }
+
+    .update-toast.is-open {
+      transform: none;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .update-toast button {
+      flex-shrink: 0;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      background: var(--emerald);
+      color: var(--on-emerald);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .update-toast button:hover {
+      background: var(--emerald-bright);
     }
 
     .qcf-word[data-type="end"] {
@@ -1001,7 +1064,7 @@
           </section>
           <section class="tutorial-step">
             <h3>٥. كشف الكلمات</h3>
-            <p>مرّر على كلمة مخفية لكشفها مؤقتًا. اضغط السهم الأيسر <kbd>←</kbd> لكشف الكلمة التالية بالترتيب، بدءًا من أول كلمة مخفية.</p>
+            <p>مرّر على كلمة مخفية (أو اضغط مطولًا على الجوال) لكشفها مؤقتًا. اضغط السهم الأيسر <kbd>←</kbd> لكشف الكلمة التالية بالترتيب.</p>
           </section>
           <section class="tutorial-step">
             <h3>٦. التفسير</h3>
@@ -1033,7 +1096,7 @@
             </div>
           </div>
           <div class="mushaf-stage" id="mushafStage">
-            <p class="mushaf-empty" id="mushafEmpty">ابدأ التشغيل لعرض صفحة المصحف مع تمييز الآية</p>
+            <p class="mushaf-empty" id="mushafEmpty">اختر السورة والمقطع لعرض صفحة المصحف</p>
           </div>
           <div class="mushaf-page-footer" id="mushafPageFooter">صفحة —</div>
           <div class="mushaf-nav" aria-label="تصفح صفحات المصحف">
@@ -1048,7 +1111,7 @@
             <h2 class="tafsir-panel-title">التفسير الميسّر</h2>
             <p class="tafsir-panel-hint">اضغط رقم الآية لفتح تفسيرها</p>
             <div class="tafsir-accordion" id="tafsirAccordion">
-              <p class="tafsir-empty">اختر المقطع ثم اضغط تشغيل لعرض التفسير</p>
+              <p class="tafsir-empty">اختر المقطع لعرض التفسير</p>
             </div>
           </aside>
 
@@ -1105,6 +1168,11 @@
     </main>
 
     <footer>الصوت من EveryAyah · النص والتفسير من Quran Cloud · مصحف المدينة (QCF V2)</footer>
+  </div>
+
+  <div class="update-toast" id="updateToast" hidden role="status" aria-live="polite">
+    <span>يتوفر تحديث للتطبيق</span>
+    <button type="button" id="btnUpdateApp">تحديث</button>
   </div>
 
   <audio id="player" preload="auto"></audio>
@@ -1197,6 +1265,8 @@
       tutorialModal: document.getElementById("tutorialModal"),
       btnTutorialClose: document.getElementById("btnTutorialClose"),
       btnTutorialDone: document.getElementById("btnTutorialDone"),
+      updateToast: document.getElementById("updateToast"),
+      btnUpdateApp: document.getElementById("btnUpdateApp"),
       status: document.getElementById("status"),
       metaRepeat: document.getElementById("metaRepeat"),
       tafsirAccordion: document.getElementById("tafsirAccordion"),
@@ -1230,7 +1300,10 @@
       stopRequested: false,
       queue: [],
       queueIndex: 0,
-      totalPlays: 0
+      totalPlays: 0,
+      previewRequestId: 0,
+      audioFailHandled: false,
+      waitingWorker: null
     };
 
     function pad3(n) {
@@ -1548,7 +1621,7 @@
       const tafsirs = state.surahTafsirs[surah];
       if (!tafsirs) {
         els.tafsirAccordion.innerHTML =
-          '<p class="tafsir-empty">اختر المقطع ثم اضغط تشغيل لعرض التفسير</p>';
+          '<p class="tafsir-empty">اختر المقطع لعرض التفسير</p>';
         saveAppState();
         return;
       }
@@ -1629,10 +1702,70 @@
       syncHiddenUi();
     }
 
-    function clearHiddenAyahs() {
-      state.hiddenAyahs.clear();
-      clearAllRevealedWords();
-      syncHiddenUi();
+    function pruneHiddenOutsideRange() {
+      const { surah, from, to } = getRangeBounds();
+      let changed = false;
+
+      for (const key of [...state.hiddenAyahs]) {
+        const [s, a] = key.split(":").map(Number);
+        if (s !== surah || a < from || a > to) {
+          state.hiddenAyahs.delete(key);
+          changed = true;
+        }
+      }
+
+      for (const key of [...state.revealedWords]) {
+        const [s, a] = key.split(":").map(Number);
+        if (s !== surah || a < from || a > to) {
+          state.revealedWords.delete(key);
+          changed = true;
+        }
+      }
+
+      if (changed) syncHiddenUi();
+      else saveAppState();
+      return changed;
+    }
+
+    async function previewPracticeRange() {
+      if (state.playing || state.paused) return;
+      const requestId = ++state.previewRequestId;
+      syncAyahBounds();
+      pruneHiddenOutsideRange();
+
+      const surah = currentSurah();
+      const { from, to } = getRangeBounds();
+      setStatus("جاري تحميل المقطع…");
+
+      try {
+        await Promise.all([
+          loadSurahTafsir(surah).catch(() => null),
+          loadSurahPages(surah).catch(() => null)
+        ]);
+        if (requestId !== state.previewRequestId) return;
+
+        let ayah = from;
+        if (
+          state.currentSurah === surah &&
+          state.currentAyah != null &&
+          state.currentAyah >= from &&
+          state.currentAyah <= to
+        ) {
+          ayah = state.currentAyah;
+        }
+
+        state.currentSurah = surah;
+        state.currentAyah = ayah;
+        state.openTafsirKey = ayahKey(surah, ayah);
+        renderTafsirAccordion(state.openTafsirKey);
+        await showMushafAyah(surah, ayah);
+        if (requestId !== state.previewRequestId) return;
+        setStatus("جاهز للاستماع");
+        saveAppState();
+      } catch (_) {
+        if (requestId !== state.previewRequestId) return;
+        setStatus("تعذّر تحميل المقطع. تحقق من الاتصال.");
+      }
     }
 
     function revealNextHiddenWord() {
@@ -1956,6 +2089,15 @@
       const focus = focusAyahOnPage(verses);
       if (!focus) return;
 
+      const surahChanged = currentSurah() !== focus.surah;
+      if (surahChanged) {
+        els.surah.value = String(focus.surah);
+        els.ayahFrom.value = focus.ayah;
+        els.ayahTo.value = focus.ayah;
+        syncAyahBounds();
+        pruneHiddenOutsideRange();
+      }
+
       state.currentSurah = focus.surah;
       state.currentAyah = focus.ayah;
       els.mushafMeta.textContent =
@@ -2049,12 +2191,37 @@
       return queue;
     }
 
+    function advanceAfterAudioFailure() {
+      if (state.audioFailHandled || state.stopRequested) return;
+      state.audioFailHandled = true;
+
+      const item = state.queue[state.queueIndex];
+      const label = item
+        ? `آية ${toArabicDigits(item.ayah)}`
+        : "الصوت";
+
+      state.queueIndex += 1;
+      updateProgress();
+
+      if (state.queueIndex >= state.queue.length) {
+        finishPlayback(`تعذّر تشغيل ${label}. انتهى المقطع.`);
+        return;
+      }
+
+      setStatus(`تعذّر تشغيل ${label} — الانتقال للتالية…`);
+      window.setTimeout(() => {
+        if (state.stopRequested) return;
+        playCurrent();
+      }, 450);
+    }
+
     function playCurrent() {
       if (state.stopRequested) return finishPlayback("تم الإيقاف");
       if (state.queueIndex >= state.queue.length) {
         return finishPlayback("اكتمل التلاوة");
       }
 
+      state.audioFailHandled = false;
       const item = state.queue[state.queueIndex];
       setAyahDisplay(item.surah, item.ayah);
 
@@ -2068,10 +2235,7 @@
 
       updateProgress();
       els.player.src = audioUrl(item.reciter, item.surah, item.ayah);
-      els.player.play().catch(() => {
-        setStatus("تعذّر تشغيل الصوت. تحقق من الاتصال ثم أعد المحاولة.");
-        finishPlayback("توقف بسبب خطأ في التشغيل");
-      });
+      els.player.play().catch(() => advanceAfterAudioFailure());
     }
 
     function finishPlayback(message) {
@@ -2123,6 +2287,11 @@
       playCurrent();
     });
 
+    els.player.addEventListener("error", () => {
+      if (!state.playing && !state.paused) return;
+      advanceAfterAudioFailure();
+    });
+
     els.btnPlay.addEventListener("click", startPlayback);
     els.btnReveal.addEventListener("click", toggleRangeHidden);
 
@@ -2138,7 +2307,58 @@
       toggleTafsirGroup(surah, ayahs);
     });
 
+    let peekTimer = null;
+    let peekWord = null;
+    let didLongPress = false;
+
+    function clearWordPeek() {
+      window.clearTimeout(peekTimer);
+      peekTimer = null;
+      if (peekWord) {
+        peekWord.classList.remove("is-peeking");
+        peekWord = null;
+      }
+    }
+
+    els.mushafStage.addEventListener("pointerdown", (e) => {
+      const word = e.target.closest(
+        ".qcf-word[data-type='word'].is-concealed"
+      );
+      if (!word) return;
+      clearWordPeek();
+      didLongPress = false;
+      peekWord = word;
+      try {
+        word.setPointerCapture(e.pointerId);
+      } catch (_) {
+        /* ignore capture failures */
+      }
+      peekTimer = window.setTimeout(() => {
+        if (!peekWord) return;
+        didLongPress = true;
+        peekWord.classList.add("is-peeking");
+      }, 380);
+    });
+
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach((type) => {
+      els.mushafStage.addEventListener(type, () => {
+        clearWordPeek();
+      });
+    });
+
+    els.mushafStage.addEventListener("contextmenu", (e) => {
+      if (e.target.closest(".qcf-word[data-type='word'].is-concealed")) {
+        e.preventDefault();
+      }
+    });
+
     els.mushafStage.addEventListener("click", (e) => {
+      if (didLongPress) {
+        didLongPress = false;
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       const word = e.target.closest(".qcf-word[data-type='word']");
       if (!word) return;
       const surah = Number(word.dataset.surah);
@@ -2188,22 +2408,15 @@
     });
 
     els.surah.addEventListener("change", () => {
+      if (state.playing || state.paused) return;
       els.ayahFrom.value = 1;
       els.ayahTo.value = 1;
       syncAyahBounds();
-      clearHiddenAyahs();
       els.metaRepeat.textContent = "";
       state.currentSurah = null;
       state.currentAyah = null;
       state.currentPage = null;
-      state.openTafsirKey = null;
-      els.tafsirAccordion.innerHTML =
-        '<p class="tafsir-empty">اختر المقطع ثم اضغط تشغيل لعرض التفسير</p>';
-      els.mushafStage.innerHTML =
-        '<p class="mushaf-empty" id="mushafEmpty">ابدأ التشغيل لعرض صفحة المصحف مع تمييز الآية</p>';
-      els.mushafMeta.textContent = "—";
-      updatePageNavUi(null);
-      saveAppState();
+      previewPracticeRange();
     });
 
     els.btnPageBack.addEventListener("click", () => {
@@ -2260,18 +2473,8 @@
 
     ["ayahFrom", "ayahTo"].forEach((id) => {
       els[id].addEventListener("change", () => {
-        syncAyahBounds();
-        clearHiddenAyahs();
-        applyMushafAyahStates(state.currentSurah, state.currentAyah);
-        if (state.surahTafsirs[currentSurah()]) {
-          const { from } = getRangeBounds();
-          renderTafsirAccordion(
-            state.currentAyah
-              ? ayahKey(currentSurah(), state.currentAyah)
-              : ayahKey(currentSurah(), from)
-          );
-        }
-        saveAppState();
+        if (state.playing || state.paused) return;
+        previewPracticeRange();
       });
     });
 
@@ -2290,6 +2493,7 @@
       restoreSession();
     } else {
       syncAyahBounds();
+      previewPracticeRange();
     }
 
     window.addEventListener("resize", scheduleMushafFit);
@@ -2297,10 +2501,69 @@
       new ResizeObserver(() => scheduleMushafFit()).observe(els.mushafStage);
     }
 
+    function showUpdateToast(worker) {
+      state.waitingWorker = worker || null;
+      if (!els.updateToast) return;
+      els.updateToast.hidden = false;
+      requestAnimationFrame(() => {
+        els.updateToast.classList.add("is-open");
+      });
+    }
+
+    function hideUpdateToast() {
+      if (!els.updateToast) return;
+      els.updateToast.classList.remove("is-open");
+      window.setTimeout(() => {
+        if (!els.updateToast.classList.contains("is-open")) {
+          els.updateToast.hidden = true;
+        }
+      }, 280);
+    }
+
+    els.btnUpdateApp?.addEventListener("click", () => {
+      hideUpdateToast();
+      if (state.waitingWorker) {
+        state.waitingWorker.postMessage({ type: "SKIP_WAITING" });
+        return;
+      }
+      window.location.reload();
+    });
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch(() => {
-          /* ignore registration failures (file://, blocked, etc.) */
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then((reg) => {
+            if (reg.waiting && navigator.serviceWorker.controller) {
+              showUpdateToast(reg.waiting);
+            }
+
+            reg.addEventListener("updatefound", () => {
+              const worker = reg.installing;
+              if (!worker) return;
+              worker.addEventListener("statechange", () => {
+                if (
+                  worker.state === "installed" &&
+                  navigator.serviceWorker.controller
+                ) {
+                  showUpdateToast(worker);
+                }
+              });
+            });
+
+            window.setInterval(() => {
+              reg.update().catch(() => {});
+            }, 60 * 60 * 1000);
+          })
+          .catch(() => {
+            /* ignore registration failures (file://, blocked, etc.) */
+          });
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
         });
       });
     }
