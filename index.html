@@ -278,13 +278,22 @@
 
     .mushaf-stage {
       position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
       background:
         linear-gradient(180deg, var(--mushaf-top), var(--mushaf-bottom));
       border: 1px solid var(--line);
       border-radius: 10px;
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       min-height: 240px;
-      padding: 0.5rem 0.35rem 0.65rem;
+      padding: 0.5rem 0.2rem 0.65rem;
+    }
+
+    .mushaf-stage .mushaf-empty,
+    .mushaf-stage .mushaf-loading {
+      width: 100%;
     }
 
     .mushaf-page-footer {
@@ -330,7 +339,12 @@
     .mushaf-page {
       direction: rtl;
       text-align: center;
-      padding: 0.35rem 0.2rem 0.5rem;
+      padding: 0.35rem 0.1rem 0.5rem;
+      width: max-content;
+      max-width: none;
+      margin-inline: auto;
+      transform-origin: top center;
+      will-change: transform;
     }
 
     .mushaf-line {
@@ -1731,6 +1745,42 @@
       }
     }
 
+    function fitMushafToStage() {
+      const stage = els.mushafStage;
+      const pageEl = stage?.querySelector(".mushaf-page");
+      if (!stage || !pageEl) return;
+
+      pageEl.style.transform = "none";
+      pageEl.style.marginBottom = "0";
+
+      const styles = getComputedStyle(stage);
+      const padX =
+        (parseFloat(styles.paddingLeft) || 0) +
+        (parseFloat(styles.paddingRight) || 0);
+      const available = stage.clientWidth - padX;
+      const needed = pageEl.scrollWidth;
+      if (!available || !needed) return;
+
+      const scale = Math.min(1, available / needed);
+      if (scale >= 0.999) return;
+
+      const naturalHeight = pageEl.offsetHeight;
+      pageEl.style.transformOrigin = "top center";
+      pageEl.style.transform = `scale(${scale})`;
+      pageEl.style.marginBottom = `${-((1 - scale) * naturalHeight)}px`;
+    }
+
+    function scheduleMushafFit() {
+      window.clearTimeout(scheduleMushafFit._timer);
+      scheduleMushafFit._timer = window.setTimeout(() => {
+        requestAnimationFrame(() => {
+          fitMushafToStage();
+          // Re-measure after fonts/layout settle
+          requestAnimationFrame(fitMushafToStage);
+        });
+      }, 40);
+    }
+
     function buildMushafHtml(page, verses, fontFamily) {
       const lines = new Map();
       const surahStartByLine = new Map();
@@ -1852,6 +1902,12 @@
           els.mushafStage.innerHTML = buildMushafHtml(page, verses, fontFamily);
           state.currentPage = page;
           updatePageNavUi(page);
+          scheduleMushafFit();
+          if (document.fonts?.ready) {
+            document.fonts.ready.then(() => {
+              if (requestId === state.mushafRequestId) scheduleMushafFit();
+            });
+          }
           prefetchNearbyPages(page);
           return verses;
         } catch (err) {
@@ -1864,6 +1920,7 @@
       }
 
       if (requestId !== state.mushafRequestId) return null;
+      scheduleMushafFit();
       prefetchNearbyPages(page);
       return state.pageWordsCache[page] || [];
     }
@@ -2233,6 +2290,11 @@
       restoreSession();
     } else {
       syncAyahBounds();
+    }
+
+    window.addEventListener("resize", scheduleMushafFit);
+    if (typeof ResizeObserver !== "undefined" && els.mushafStage) {
+      new ResizeObserver(() => scheduleMushafFit()).observe(els.mushafStage);
     }
 
     if ("serviceWorker" in navigator) {
