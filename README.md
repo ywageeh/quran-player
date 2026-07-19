@@ -16,21 +16,30 @@ Arabic-first Quran memorization player: pick a reciter and ayah range, listen wi
 - **Session restore** — Selections, hide state, last position, and theme persist across refresh
 - **Dark mode** — Toggle in the header
 - **In-app guide** — دليل الاستخدام explains the workflow
+- **PWA** — Installable on phone/desktop (manifest + service worker); app shell can load offline, audio/mushaf still need network
 
 ## Run locally
 
-No build step. Open the page in a browser:
+No build step. Serve over **http/https** (service workers do not run from `file://`):
 
 ```bash
-# optional: simple local server
 npx serve .
 # or
 python -m http.server 8080
 ```
 
-Then open `index.html` (or the URL the server prints).
+Then open the URL the server prints.
 
-> Audio and mushaf fonts load from the network, so an internet connection is required.
+> Audio and mushaf fonts load from the network, so an internet connection is required for full use.
+
+## Deploy & custom domain
+
+Paths are relative (`./`), so you can:
+
+1. Deploy to any HTTPS host (e.g. GitHub Pages)
+2. Connect your custom domain afterward
+
+Install/Add to Home Screen works on the HTTPS URL. After changing domain, users may need to re-add the icon (service worker cache is per-origin).
 
 ## Keyboard shortcuts
 
@@ -51,8 +60,11 @@ Then open `index.html` (or the URL the server prints).
 ## Project layout
 
 ```
-index.html      # app (UI, styles, logic)
-.impeccable.md  # design context
+index.html              # app (UI, styles, logic)
+manifest.webmanifest    # PWA manifest
+sw.js                   # service worker (app shell cache)
+icons/                  # install icons
+.impeccable.md          # design context
 ```
 
 ## License
