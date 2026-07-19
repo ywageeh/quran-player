@@ -1153,6 +1153,7 @@
     const NO_BISMILLAH = new Set([1, 9]);
     const STORAGE_KEY = "muraddid-quran-state-v1";
     const TOTAL_PAGES = 604;
+    const PREFETCH_RADIUS = 2;
 
     const els = {
       wrap: document.querySelector(".wrap"),
@@ -1192,6 +1193,8 @@
       surahTafsirs: {},
       surahPages: {},
       pageWordsCache: {},
+      pageFontTasks: {},
+      pageWordTasks: {},
       loadedFonts: new Set(),
       uthmaniReady: null,
       surahNamesReady: null,
@@ -1675,23 +1678,49 @@
     async function loadPageFont(page) {
       const family = `p${page}-v2`;
       if (state.loadedFonts.has(family)) return family;
-      const face = new FontFace(family, `url(${QCF_FONT_CDN}/p${page}.woff2)`);
-      await face.load();
-      document.fonts.add(face);
-      state.loadedFonts.add(family);
-      return family;
+      if (!state.pageFontTasks[page]) {
+        state.pageFontTasks[page] = (async () => {
+          const face = new FontFace(family, `url(${QCF_FONT_CDN}/p${page}.woff2)`);
+          await face.load();
+          document.fonts.add(face);
+          state.loadedFonts.add(family);
+          return family;
+        })().catch((err) => {
+          delete state.pageFontTasks[page];
+          throw err;
+        });
+      }
+      return state.pageFontTasks[page];
     }
 
     async function loadPageWords(page) {
       if (state.pageWordsCache[page]) return state.pageWordsCache[page];
-      const url =
-        `${QURAN_COM_API}/verses/by_page/${page}` +
-        `?words=true&word_fields=code_v2,text_qpc_hafs,line_number,page_number,char_type_name,location&mushaf=1`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("تعذّر تحميل كلمات صفحة المصحف");
-      const data = await res.json();
-      state.pageWordsCache[page] = data.verses || [];
-      return state.pageWordsCache[page];
+      if (!state.pageWordTasks[page]) {
+        state.pageWordTasks[page] = (async () => {
+          const url =
+            `${QURAN_COM_API}/verses/by_page/${page}` +
+            `?words=true&word_fields=code_v2,text_qpc_hafs,line_number,page_number,char_type_name,location&mushaf=1`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("تعذّر تحميل كلمات صفحة المصحف");
+          const data = await res.json();
+          state.pageWordsCache[page] = data.verses || [];
+          return state.pageWordsCache[page];
+        })().catch((err) => {
+          delete state.pageWordTasks[page];
+          throw err;
+        });
+      }
+      return state.pageWordTasks[page];
+    }
+
+    function prefetchNearbyPages(centerPage) {
+      if (!Number.isFinite(centerPage)) return;
+      for (let page = centerPage - PREFETCH_RADIUS; page <= centerPage + PREFETCH_RADIUS; page++) {
+        if (page < 1 || page > TOTAL_PAGES || page === centerPage) continue;
+        Promise.all([loadPageFont(page), loadPageWords(page)]).catch(() => {
+          /* quiet background warm-up */
+        });
+      }
     }
 
     function buildMushafHtml(page, verses, fontFamily) {
@@ -1815,6 +1844,7 @@
           els.mushafStage.innerHTML = buildMushafHtml(page, verses, fontFamily);
           state.currentPage = page;
           updatePageNavUi(page);
+          prefetchNearbyPages(page);
           return verses;
         } catch (err) {
           if (requestId !== state.mushafRequestId) return null;
@@ -1826,6 +1856,7 @@
       }
 
       if (requestId !== state.mushafRequestId) return null;
+      prefetchNearbyPages(page);
       return state.pageWordsCache[page] || [];
     }
 
