@@ -198,6 +198,43 @@
       .reading {
         grid-template-columns: 1fr;
       }
+
+      .reading.is-qiyam-setup .side-stack {
+        order: -1;
+      }
+    }
+
+    .side-stack > [hidden],
+    .mushaf-panel [hidden] {
+      display: none;
+    }
+
+    .mode-tabs {
+      display: inline-flex;
+      gap: 0.2rem;
+      padding: 0.2rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: color-mix(in oklch, var(--surface) 88%, transparent);
+      animation: rise 0.85s var(--ease) 0.04s both;
+    }
+
+    .mode-tab {
+      padding: 0.4rem 1rem;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .mode-tab:hover:not(:disabled):not(.is-active) {
+      color: var(--emerald);
+    }
+
+    .mode-tab.is-active {
+      background: var(--emerald);
+      color: var(--on-emerald);
     }
 
     .side-stack {
@@ -336,6 +373,20 @@
       opacity: 0.35;
     }
 
+    .mushaf-nav .btn-rakaa-done {
+      flex: 1.4;
+      max-width: 11rem;
+      border-color: var(--emerald);
+      background: var(--emerald);
+      color: var(--on-emerald);
+    }
+
+    .mushaf-nav .btn-rakaa-done:hover:not(:disabled) {
+      border-color: var(--emerald-bright);
+      background: var(--emerald-bright);
+      color: var(--on-emerald);
+    }
+
     .mushaf-page {
       direction: rtl;
       text-align: center;
@@ -456,6 +507,18 @@
       .qcf-word[data-type="word"].is-concealed.is-active:hover {
         background: color-mix(in oklch, var(--gold) 38%, transparent);
       }
+    }
+
+    .qcf-word.is-rakaa {
+      --rakaa-tint: color-mix(in oklch, var(--gold) 22%, transparent);
+      border-radius: 0;
+      background: var(--rakaa-tint);
+      /* fill the flex gap so the rakaa reads as one band per line */
+      box-shadow: 0.07em 0 0 var(--rakaa-tint), -0.07em 0 0 var(--rakaa-tint);
+    }
+
+    .qcf-word.is-outside-rakaa {
+      opacity: 0.38;
     }
 
     .update-toast {
@@ -706,6 +769,83 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.45rem;
+    }
+
+    .qiyam-panel {
+      flex: 1 1 auto;
+      align-content: start;
+    }
+
+    .qiyam-grid {
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      align-self: end;
+      padding-bottom: 0.5rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    .check input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--emerald);
+      cursor: pointer;
+    }
+
+    .qiyam-panel .actions button {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.9rem;
+    }
+
+    .qiyam-plan {
+      position: relative;
+      display: grid;
+      gap: 0.3rem;
+      max-height: 17rem;
+      overflow: auto;
+    }
+
+    .qiyam-plan:empty {
+      display: none;
+    }
+
+    .qiyam-plan-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      border: 1px solid var(--line);
+      background: color-mix(in oklch, var(--paper) 55%, var(--surface));
+      color: var(--ink);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .qiyam-plan-n {
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .qiyam-plan-item.is-done {
+      opacity: 0.55;
+    }
+
+    .qiyam-plan-item.is-current {
+      border-color: var(--emerald);
+      background: color-mix(in oklch, var(--emerald-soft) 70%, var(--surface));
+    }
+
+    .qiyam-plan-item.is-current .qiyam-plan-n {
+      color: var(--emerald);
     }
 
     .actions {
@@ -1074,6 +1214,10 @@
             <h3>٧. الوضع الليلي والحفظ التلقائي</h3>
             <p>بدّل الوضع الليلي من الزر في الأعلى. تُحفظ اختياراتك وحالة الإخفاء وآخر موضع تلقائيًا عند تحديث الصفحة.</p>
           </section>
+          <section class="tutorial-step">
+            <h3>٨. قيام الليل</h3>
+            <p>من تبويب «قيام الليل» اختر سورة البداية وموضع النهاية (آية محددة أو «إلى نهاية السورة») وعدد الركعات، ثم اضغط «قسّم وابدأ». تُظلَّل آيات الركعة الحالية في المصحف، وبعد كل ركعة اضغط «تمت الركعة» للانتقال إلى التالية.</p>
+          </section>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-primary" id="btnTutorialDone">حسناً</button>
@@ -1081,8 +1225,13 @@
       </div>
     </div>
 
+    <nav class="mode-tabs" role="tablist" aria-label="وضع الاستخدام">
+      <button type="button" class="mode-tab is-active" id="tabHifz" role="tab" aria-selected="true">الحفظ والتلاوة</button>
+      <button type="button" class="mode-tab" id="tabQiyam" role="tab" aria-selected="false">قيام الليل</button>
+    </nav>
+
     <main class="stage">
-      <section class="reading">
+      <section class="reading" id="reading">
         <section class="mushaf-panel" id="mushafPanel" aria-live="polite">
           <div class="mushaf-toolbar">
             <button
@@ -1101,13 +1250,14 @@
           <div class="mushaf-page-footer" id="mushafPageFooter">صفحة —</div>
           <div class="mushaf-nav" aria-label="تصفح صفحات المصحف">
             <button type="button" id="btnPageBack" disabled title="الصفحة السابقة">→ السابق</button>
+            <button type="button" class="btn-rakaa-done" id="btnRakaaDone" hidden title="الانتقال إلى الركعة التالية">تمت الركعة</button>
             <button type="button" id="btnPageForward" disabled title="الصفحة التالية">التالي ←</button>
           </div>
           <div class="progress" id="mushafProgress"><span id="mushafProgressBar"></span></div>
         </section>
 
         <div class="side-stack">
-          <aside class="tafsir-panel" aria-label="التفسير الميسّر">
+          <aside class="tafsir-panel" id="tafsirPanel" aria-label="التفسير الميسّر">
             <h2 class="tafsir-panel-title">التفسير الميسّر</h2>
             <p class="tafsir-panel-hint">اضغط رقم الآية لفتح تفسيرها</p>
             <div class="tafsir-accordion" id="tafsirAccordion">
@@ -1115,7 +1265,7 @@
             </div>
           </aside>
 
-          <section class="controls">
+          <section class="controls" id="hifzControls">
             <div class="grid">
               <div class="field span-2">
                 <label for="reciter">القارئ</label>
@@ -1162,6 +1312,45 @@
 
             <p class="status" id="status">جاهز للاستماع</p>
             <p class="status" id="metaRepeat"></p>
+          </section>
+
+          <section class="controls qiyam-panel" id="qiyamPanel" hidden aria-label="قيام الليل">
+            <div class="grid qiyam-grid">
+              <div class="field">
+                <label for="qiyamFromSurah">من سورة</label>
+                <select id="qiyamFromSurah"></select>
+              </div>
+              <div class="field">
+                <label for="qiyamFromAyah">من آية</label>
+                <input id="qiyamFromAyah" type="number" min="1" value="1" />
+              </div>
+
+              <div class="field">
+                <label for="qiyamToSurah">إلى سورة</label>
+                <select id="qiyamToSurah"></select>
+              </div>
+              <div class="field">
+                <label for="qiyamToAyah">إلى آية</label>
+                <input id="qiyamToAyah" type="number" min="1" value="1" />
+              </div>
+
+              <label class="check" for="qiyamToEnd">
+                <input id="qiyamToEnd" type="checkbox" checked />
+                إلى نهاية السورة
+              </label>
+              <div class="field">
+                <label for="qiyamRakaat">عدد الركعات</label>
+                <input id="qiyamRakaat" type="number" min="1" max="99" value="8" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="button" class="btn-primary" id="btnQiyamStart">قسّم وابدأ</button>
+              <button type="button" class="btn-secondary" id="btnQiyamEnd" hidden>إنهاء القيام</button>
+            </div>
+
+            <p class="status" id="qiyamStatus"></p>
+            <div class="qiyam-plan" id="qiyamPlan"></div>
           </section>
         </div>
       </section>
@@ -1244,9 +1433,27 @@
     const STORAGE_KEY = "muraddid-quran-state-v1";
     const TOTAL_PAGES = 604;
     const PREFETCH_RADIUS = 2;
+    const DEFAULT_RAKAAT = 8;
 
     const els = {
       wrap: document.querySelector(".wrap"),
+      tabHifz: document.getElementById("tabHifz"),
+      tabQiyam: document.getElementById("tabQiyam"),
+      reading: document.getElementById("reading"),
+      tafsirPanel: document.getElementById("tafsirPanel"),
+      hifzControls: document.getElementById("hifzControls"),
+      qiyamPanel: document.getElementById("qiyamPanel"),
+      qiyamFromSurah: document.getElementById("qiyamFromSurah"),
+      qiyamFromAyah: document.getElementById("qiyamFromAyah"),
+      qiyamToSurah: document.getElementById("qiyamToSurah"),
+      qiyamToAyah: document.getElementById("qiyamToAyah"),
+      qiyamToEnd: document.getElementById("qiyamToEnd"),
+      qiyamRakaat: document.getElementById("qiyamRakaat"),
+      btnQiyamStart: document.getElementById("btnQiyamStart"),
+      btnQiyamEnd: document.getElementById("btnQiyamEnd"),
+      btnRakaaDone: document.getElementById("btnRakaaDone"),
+      qiyamStatus: document.getElementById("qiyamStatus"),
+      qiyamPlan: document.getElementById("qiyamPlan"),
       reciter: document.getElementById("reciter"),
       surah: document.getElementById("surah"),
       ayahFrom: document.getElementById("ayahFrom"),
@@ -1280,6 +1487,11 @@
 
     const state = {
       darkMode: false,
+      mode: "hifz",
+      qiyam: { plan: [], index: 0, byLength: true },
+      wakeLock: null,
+      wakeLockTask: null,
+      surahLengths: {},
       hiddenAyahs: new Set(),
       revealedWords: new Set(),
       surahTafsirs: {},
@@ -1331,7 +1543,16 @@
         openTafsirKey: state.openTafsirKey,
         currentSurah: state.currentSurah,
         currentAyah: state.currentAyah,
-        currentPage: state.currentPage
+        currentPage: state.currentPage,
+        mode: state.mode,
+        qiyam: {
+          ...getQiyamRange(),
+          toEnd: els.qiyamToEnd.checked,
+          rakaat: Math.max(1, Number(els.qiyamRakaat.value) || DEFAULT_RAKAAT),
+          plan: state.qiyam.plan,
+          index: state.qiyam.index,
+          byLength: state.qiyam.byLength
+        }
       };
     }
 
@@ -1401,7 +1622,50 @@
         state.currentPage = page;
       }
 
+      applyStoredQiyam(saved.qiyam);
+      if (saved.mode === "qiyam") state.mode = "qiyam";
+
       return true;
+    }
+
+    function applyStoredQiyam(saved) {
+      if (!saved || typeof saved !== "object") return;
+
+      const isAyahRef = (surah, ayah) =>
+        Number.isInteger(surah) &&
+        surah >= 1 &&
+        surah <= 114 &&
+        Number.isInteger(ayah) &&
+        ayah >= 1 &&
+        ayah <= AYAH_COUNTS[surah - 1];
+
+      if (isAyahRef(saved.fromSurah, 1)) els.qiyamFromSurah.value = String(saved.fromSurah);
+      if (isAyahRef(saved.toSurah, 1)) els.qiyamToSurah.value = String(saved.toSurah);
+      els.qiyamFromAyah.value = Number(saved.fromAyah) || 1;
+      els.qiyamToAyah.value = Number(saved.toAyah) || 1;
+      els.qiyamToEnd.checked = saved.toEnd !== false;
+      els.qiyamRakaat.value = Number(saved.rakaat) || DEFAULT_RAKAAT;
+
+      if (!Array.isArray(saved.plan) || !saved.plan.length) return;
+      const valid = saved.plan.every(
+        (seg) =>
+          seg &&
+          isAyahRef(seg.fromSurah, seg.fromAyah) &&
+          isAyahRef(seg.toSurah, seg.toAyah)
+      );
+      if (!valid) return;
+
+      state.qiyam.plan = saved.plan.map((seg) => ({
+        fromSurah: seg.fromSurah,
+        fromAyah: seg.fromAyah,
+        toSurah: seg.toSurah,
+        toAyah: seg.toAyah
+      }));
+      state.qiyam.index = Math.min(
+        Math.max(0, Number(saved.index) || 0),
+        state.qiyam.plan.length
+      );
+      state.qiyam.byLength = saved.byLength !== false;
     }
 
     async function restoreSession() {
@@ -1451,10 +1715,15 @@
     }
 
     function fillSurahs() {
-      els.surah.innerHTML = SURAH_NAMES.map(
+      const options = SURAH_NAMES.map(
         (name, i) =>
           `<option value="${i + 1}">${toArabicDigits(i + 1)}. ${name}</option>`
       ).join("");
+      els.surah.innerHTML = options;
+      els.qiyamFromSurah.innerHTML = options;
+      els.qiyamToSurah.innerHTML = options;
+      els.qiyamFromSurah.value = "2";
+      els.qiyamToSurah.value = "2";
     }
 
     function currentSurah() {
@@ -1500,17 +1769,30 @@
       return map;
     }
 
-    async function loadSurahPages(surah) {
-      if (state.surahPages[surah]) return state.surahPages[surah];
+    async function loadSurahText(surah) {
       const res = await fetch(`https://api.alquran.cloud/v1/surah/${surah}`);
       if (!res.ok) throw new Error("تعذّر تحميل أرقام الصفحات");
       const data = await res.json();
       const pages = {};
+      const lengths = {};
       for (const a of data.data.ayahs) {
         pages[a.numberInSurah] = a.page;
+        lengths[a.numberInSurah] = String(a.text || "").length;
       }
       state.surahPages[surah] = pages;
-      return pages;
+      state.surahLengths[surah] = lengths;
+    }
+
+    async function loadSurahPages(surah) {
+      if (state.surahPages[surah]) return state.surahPages[surah];
+      await loadSurahText(surah);
+      return state.surahPages[surah];
+    }
+
+    async function loadSurahLengths(surah) {
+      if (state.surahLengths[surah]) return state.surahLengths[surah];
+      await loadSurahText(surah);
+      return state.surahLengths[surah];
     }
 
     async function loadSurahTafsir(surah) {
@@ -1968,7 +2250,24 @@
       return html;
     }
 
+    function applyQiyamAyahStates() {
+      const rakaa = currentRakaa();
+      els.mushafStage.querySelectorAll(".qcf-word").forEach((node) => {
+        const inRakaa =
+          Boolean(rakaa) &&
+          isInRakaa(rakaa, Number(node.dataset.surah), Number(node.dataset.ayah));
+        node.classList.remove("is-in-range", "is-active", "is-concealed");
+        node.classList.toggle("is-rakaa", inRakaa);
+        node.classList.toggle("is-outside-rakaa", Boolean(rakaa) && !inRakaa);
+      });
+    }
+
     function applyMushafAyahStates(surah, ayah) {
+      if (state.mode === "qiyam") {
+        applyQiyamAyahStates();
+        return;
+      }
+
       const page = els.mushafStage.querySelector(".mushaf-page");
       if (!page) return;
 
@@ -2074,6 +2373,13 @@
 
     async function navigateToPage(page) {
       if (page < 1 || page > TOTAL_PAGES) return;
+      if (state.mode === "qiyam") {
+        await renderMushafPage(page, null, null);
+        updateQiyamMeta();
+        applyMushafAyahStates();
+        saveAppState();
+        return;
+      }
       if (state.playing || state.paused) {
         setStatus("أوقف التشغيل أولًا لتصفح الصفحات.");
         return;
@@ -2115,6 +2421,338 @@
       saveAppState();
     }
 
+    function getQiyamRange() {
+      return {
+        fromSurah: Number(els.qiyamFromSurah.value) || 1,
+        fromAyah: Number(els.qiyamFromAyah.value) || 1,
+        toSurah: Number(els.qiyamToSurah.value) || 1,
+        toAyah: Number(els.qiyamToAyah.value) || 1
+      };
+    }
+
+    function currentRakaa() {
+      return state.qiyam.plan[state.qiyam.index] || null;
+    }
+
+    function syncQiyamBounds() {
+      const fromSurah = Number(els.qiyamFromSurah.value) || 1;
+      const toSurah = Math.max(fromSurah, Number(els.qiyamToSurah.value) || fromSurah);
+      els.qiyamToSurah.value = String(toSurah);
+
+      const fromMax = AYAH_COUNTS[fromSurah - 1];
+      const toMax = AYAH_COUNTS[toSurah - 1];
+      els.qiyamFromAyah.max = fromMax;
+      els.qiyamToAyah.max = toMax;
+
+      const fromAyah = Math.min(
+        Math.max(1, Math.floor(Number(els.qiyamFromAyah.value)) || 1),
+        fromMax
+      );
+      let toAyah = els.qiyamToEnd.checked
+        ? toMax
+        : Math.min(Math.max(1, Math.floor(Number(els.qiyamToAyah.value)) || toMax), toMax);
+      if (toSurah === fromSurah && toAyah < fromAyah) toAyah = fromAyah;
+
+      els.qiyamFromAyah.value = fromAyah;
+      els.qiyamToAyah.value = toAyah;
+      els.qiyamRakaat.value = Math.min(
+        99,
+        Math.max(1, Math.floor(Number(els.qiyamRakaat.value)) || DEFAULT_RAKAAT)
+      );
+      els.qiyamToAyah.disabled = els.qiyamToEnd.checked || state.qiyam.plan.length > 0;
+    }
+
+    function isInRakaa(rakaa, surah, ayah) {
+      if (surah < rakaa.fromSurah || surah > rakaa.toSurah) return false;
+      if (surah === rakaa.fromSurah && ayah < rakaa.fromAyah) return false;
+      if (surah === rakaa.toSurah && ayah > rakaa.toAyah) return false;
+      return true;
+    }
+
+    function formatRakaaSpan(rakaa) {
+      const start = `${SURAH_NAMES[rakaa.fromSurah - 1]} ${toArabicDigits(rakaa.fromAyah)}`;
+      if (rakaa.fromSurah !== rakaa.toSurah) {
+        return `${start} — ${SURAH_NAMES[rakaa.toSurah - 1]} ${toArabicDigits(rakaa.toAyah)}`;
+      }
+      return rakaa.fromAyah === rakaa.toAyah
+        ? start
+        : `${start}–${toArabicDigits(rakaa.toAyah)}`;
+    }
+
+    function rakaaPagesLabel(rakaa) {
+      const first = state.surahPages[rakaa.fromSurah]?.[rakaa.fromAyah];
+      const last = state.surahPages[rakaa.toSurah]?.[rakaa.toAyah];
+      if (!first || !last) return "";
+      return first === last
+        ? ` · صفحة ${toArabicDigits(first)}`
+        : ` · الصفحات ${toArabicDigits(first)}–${toArabicDigits(last)}`;
+    }
+
+    function listQiyamAyahs({ fromSurah, fromAyah, toSurah, toAyah }) {
+      const ayahs = [];
+      for (let surah = fromSurah; surah <= toSurah; surah++) {
+        const first = surah === fromSurah ? fromAyah : 1;
+        const last = surah === toSurah ? toAyah : AYAH_COUNTS[surah - 1];
+        for (let ayah = first; ayah <= last; ayah++) ayahs.push({ surah, ayah });
+      }
+      return ayahs;
+    }
+
+    async function loadQiyamLengths({ fromSurah, toSurah }) {
+      const surahs = [];
+      for (let surah = fromSurah; surah <= toSurah; surah++) surahs.push(surah);
+      // Small batches keep a many-surah range from flooding the API
+      for (let i = 0; i < surahs.length; i += 6) {
+        await Promise.all(surahs.slice(i, i + 6).map(loadSurahLengths));
+      }
+    }
+
+    // Splits at ayah boundaries so each rakaa's share of `weights` is as even as possible
+    function buildQiyamPlan(ayahs, weights, rakaat) {
+      const count = Math.min(rakaat, ayahs.length);
+      const cumulative = [0];
+      for (const weight of weights) {
+        cumulative.push(cumulative[cumulative.length - 1] + weight);
+      }
+      const total = cumulative[ayahs.length];
+
+      const plan = [];
+      let start = 0;
+      for (let i = 1; i <= count; i++) {
+        let end = ayahs.length;
+        if (i < count) {
+          const target = (total * i) / count;
+          const maxEnd = ayahs.length - (count - i);
+          end = start + 1;
+          while (
+            end < maxEnd &&
+            Math.abs(cumulative[end + 1] - target) <= Math.abs(cumulative[end] - target)
+          ) {
+            end += 1;
+          }
+        }
+        plan.push({
+          fromSurah: ayahs[start].surah,
+          fromAyah: ayahs[start].ayah,
+          toSurah: ayahs[end - 1].surah,
+          toAyah: ayahs[end - 1].ayah
+        });
+        start = end;
+      }
+      return plan;
+    }
+
+    function setQiyamStatus(html) {
+      els.qiyamStatus.innerHTML = html;
+    }
+
+    function updateQiyamMeta() {
+      const { plan, index } = state.qiyam;
+      const rakaa = currentRakaa();
+      if (rakaa) {
+        els.mushafMeta.textContent =
+          `الركعة ${toArabicDigits(index + 1)} من ${toArabicDigits(plan.length)}: ${formatRakaaSpan(rakaa)}`;
+      } else {
+        els.mushafMeta.textContent = plan.length ? "اكتمل القيام" : "قيام الليل";
+      }
+    }
+
+    function syncWakeLock() {
+      const wanted =
+        state.mode === "qiyam" &&
+        Boolean(currentRakaa()) &&
+        document.visibilityState === "visible";
+
+      if (!wanted) {
+        const lock = state.wakeLock;
+        state.wakeLock = null;
+        lock?.release().catch(() => {});
+        return;
+      }
+
+      if (state.wakeLock || state.wakeLockTask || !navigator.wakeLock) return;
+      state.wakeLockTask = navigator.wakeLock
+        .request("screen")
+        .then((lock) => {
+          lock.addEventListener("release", () => {
+            if (state.wakeLock === lock) state.wakeLock = null;
+          });
+          state.wakeLock = lock;
+        })
+        .catch(() => {
+          /* unsupported or denied — the screen simply follows system settings */
+        })
+        .finally(() => {
+          state.wakeLockTask = null;
+          if (state.wakeLock) syncWakeLock();
+        });
+    }
+
+    function renderQiyamUi() {
+      const { plan, index } = state.qiyam;
+      const inQiyam = state.mode === "qiyam";
+      const active = plan.length > 0;
+      const rakaa = currentRakaa();
+
+      [els.qiyamFromSurah, els.qiyamFromAyah, els.qiyamToSurah, els.qiyamToEnd, els.qiyamRakaat]
+        .forEach((el) => { el.disabled = active; });
+      els.qiyamToAyah.disabled = active || els.qiyamToEnd.checked;
+      els.btnQiyamStart.hidden = active;
+      els.btnQiyamEnd.hidden = !active;
+      els.btnRakaaDone.hidden = !inQiyam || !rakaa;
+      els.reading.classList.toggle("is-qiyam-setup", inQiyam && !active);
+
+      els.qiyamPlan.innerHTML = plan
+        .map(
+          (seg, i) =>
+            `<button type="button" class="qiyam-plan-item${i === index ? " is-current" : ""}${i < index ? " is-done" : ""}" data-index="${i}"${i === index ? ' aria-current="step"' : ""}>` +
+            `<span class="qiyam-plan-n">الركعة ${toArabicDigits(i + 1)}</span>` +
+            `<span>${formatRakaaSpan(seg)}</span>` +
+            `</button>`
+        )
+        .join("");
+      const currentItem = els.qiyamPlan.querySelector(".is-current");
+      if (currentItem) {
+        els.qiyamPlan.scrollTop =
+          currentItem.offsetTop - (els.qiyamPlan.clientHeight - currentItem.offsetHeight) / 2;
+      }
+
+      if (!active) {
+        setQiyamStatus("اختر المقطع وعدد الركعات ثم اضغط «قسّم وابدأ»");
+      } else if (!rakaa) {
+        setQiyamStatus("<strong>اكتمل القيام</strong> — تقبّل الله منك");
+      } else {
+        setQiyamStatus(
+          `الركعة <strong>${toArabicDigits(index + 1)}</strong> من <strong>${toArabicDigits(plan.length)}</strong>` +
+          rakaaPagesLabel(rakaa) +
+          (state.qiyam.byLength ? "" : "<br>تعذّر تحميل أطوال الآيات، فقُسّم المقطع بعدد الآيات")
+        );
+      }
+
+      if (inQiyam) {
+        els.mushafProgress.classList.toggle("active", active);
+        els.mushafProgressBar.style.width = active
+          ? `${(index / plan.length) * 100}%`
+          : "0%";
+        updateQiyamMeta();
+      }
+
+      syncWakeLock();
+    }
+
+    async function showQiyamRakaa(focus = false) {
+      const rakaa = currentRakaa();
+      if (!rakaa) return;
+
+      try {
+        await Promise.all([
+          loadSurahPages(rakaa.fromSurah),
+          loadSurahPages(rakaa.toSurah)
+        ]);
+      } catch (_) {
+        if (state.mode === "qiyam") {
+          setQiyamStatus("تعذّر تحميل صفحة المصحف. تحقق من الاتصال.");
+        }
+        return;
+      }
+      if (state.mode !== "qiyam" || currentRakaa() !== rakaa) return;
+
+      const page = state.surahPages[rakaa.fromSurah]?.[rakaa.fromAyah];
+      if (!page) return;
+
+      const verses = await renderMushafPage(page, null, null);
+      if (state.mode !== "qiyam") return;
+      renderQiyamUi();
+      if (!verses) return;
+      applyMushafAyahStates();
+      saveAppState();
+
+      if (focus) {
+        // Wait for the page to be scaled to the stage before scrolling to the start
+        window.setTimeout(() => {
+          els.mushafStage
+            .querySelector(".qcf-word.is-rakaa")
+            ?.scrollIntoView({ block: "center", behavior: "smooth" });
+        }, 120);
+      }
+    }
+
+    function goToRakaa(index) {
+      const { plan } = state.qiyam;
+      if (!plan.length) return;
+      state.qiyam.index = Math.min(Math.max(0, index), plan.length);
+      renderQiyamUi();
+      applyMushafAyahStates();
+      saveAppState();
+      showQiyamRakaa(true);
+    }
+
+    async function startQiyam() {
+      syncQiyamBounds();
+      const range = getQiyamRange();
+      const ayahs = listQiyamAyahs(range);
+      const rakaat = Number(els.qiyamRakaat.value) || DEFAULT_RAKAAT;
+
+      els.btnQiyamStart.disabled = true;
+      setQiyamStatus("جاري تقسيم المقطع…");
+      let weights;
+      let byLength = true;
+      try {
+        await loadQiyamLengths(range);
+        weights = ayahs.map(({ surah, ayah }) => state.surahLengths[surah][ayah] || 1);
+      } catch (_) {
+        weights = ayahs.map(() => 1);
+        byLength = false;
+      }
+      els.btnQiyamStart.disabled = false;
+      if (state.mode !== "qiyam") return;
+
+      state.qiyam.plan = buildQiyamPlan(ayahs, weights, rakaat);
+      state.qiyam.byLength = byLength;
+      els.qiyamRakaat.value = state.qiyam.plan.length;
+      goToRakaa(0);
+    }
+
+    function endQiyam() {
+      state.qiyam.plan = [];
+      state.qiyam.index = 0;
+      state.qiyam.byLength = true;
+      renderQiyamUi();
+      applyMushafAyahStates();
+      saveAppState();
+    }
+
+    function setMode(mode) {
+      const qiyam = mode === "qiyam";
+      if (qiyam && (state.playing || state.paused)) return;
+
+      state.mode = qiyam ? "qiyam" : "hifz";
+      els.tabHifz.classList.toggle("is-active", !qiyam);
+      els.tabQiyam.classList.toggle("is-active", qiyam);
+      els.tabHifz.setAttribute("aria-selected", String(!qiyam));
+      els.tabQiyam.setAttribute("aria-selected", String(qiyam));
+      els.tafsirPanel.hidden = qiyam;
+      els.hifzControls.hidden = qiyam;
+      els.qiyamPanel.hidden = !qiyam;
+      els.btnReveal.hidden = qiyam;
+      clearWordPeek();
+      renderQiyamUi();
+
+      if (qiyam) {
+        state.previewRequestId += 1;
+        applyMushafAyahStates();
+        showQiyamRakaa();
+      } else {
+        els.mushafStage
+          .querySelectorAll(".is-rakaa, .is-outside-rakaa")
+          .forEach((node) => node.classList.remove("is-rakaa", "is-outside-rakaa"));
+        els.mushafProgress.classList.remove("active");
+        updateProgress();
+        previewPracticeRange();
+      }
+      saveAppState();
+    }
+
     function setAyahDisplay(surah, ayah) {
       state.currentSurah = surah;
       state.currentAyah = ayah;
@@ -2144,6 +2782,7 @@
 
       [els.reciter, els.surah, els.ayahFrom, els.ayahTo, els.ayahRepeat, els.rangeRepeat]
         .forEach((el) => { el.disabled = active; });
+      els.tabQiyam.disabled = active;
 
       if (active) {
         els.btnPageBack.disabled = true;
@@ -2359,6 +2998,7 @@
         e.stopPropagation();
         return;
       }
+      if (state.mode === "qiyam") return;
       const word = e.target.closest(".qcf-word[data-type='word']");
       if (!word) return;
       const surah = Number(word.dataset.surah);
@@ -2379,6 +3019,7 @@
       }
       if (e.target.matches("input, select, textarea")) return;
       if (els.tutorialModal && !els.tutorialModal.hidden) return;
+      if (state.mode === "qiyam") return;
       if (e.code === "KeyH") {
         e.preventDefault();
         toggleRangeHidden();
@@ -2482,17 +3123,66 @@
       els[id].addEventListener("change", saveAppState);
     });
 
+    els.tabHifz.addEventListener("click", () => {
+      if (state.mode !== "hifz") setMode("hifz");
+    });
+
+    els.tabQiyam.addEventListener("click", () => {
+      if (state.mode !== "qiyam") setMode("qiyam");
+    });
+
+    els.qiyamFromSurah.addEventListener("change", () => {
+      els.qiyamFromAyah.value = 1;
+      if (Number(els.qiyamToSurah.value) < Number(els.qiyamFromSurah.value)) {
+        els.qiyamToSurah.value = els.qiyamFromSurah.value;
+        els.qiyamToAyah.value = AYAH_COUNTS[Number(els.qiyamToSurah.value) - 1];
+      }
+      syncQiyamBounds();
+      saveAppState();
+    });
+
+    els.qiyamToSurah.addEventListener("change", () => {
+      syncQiyamBounds();
+      els.qiyamToAyah.value = AYAH_COUNTS[Number(els.qiyamToSurah.value) - 1];
+      syncQiyamBounds();
+      saveAppState();
+    });
+
+    ["qiyamFromAyah", "qiyamToAyah", "qiyamToEnd", "qiyamRakaat"].forEach((id) => {
+      els[id].addEventListener("change", () => {
+        syncQiyamBounds();
+        saveAppState();
+      });
+    });
+
+    els.btnQiyamStart.addEventListener("click", startQiyam);
+    els.btnQiyamEnd.addEventListener("click", endQiyam);
+
+    els.btnRakaaDone.addEventListener("click", () => {
+      if (currentRakaa()) goToRakaa(state.qiyam.index + 1);
+    });
+
+    els.qiyamPlan.addEventListener("click", (e) => {
+      const item = e.target.closest(".qiyam-plan-item");
+      if (item) goToRakaa(Number(item.dataset.index));
+    });
+
+    document.addEventListener("visibilitychange", syncWakeLock);
+
     fillReciters();
     fillSurahs();
     updatePageNavUi(null);
 
     const savedState = readStoredState();
-    if (savedState) {
-      applyStoredState(savedState);
-      syncAyahBounds();
+    if (savedState) applyStoredState(savedState);
+    syncAyahBounds();
+    syncQiyamBounds();
+
+    if (state.mode === "qiyam") {
+      setMode("qiyam");
+    } else if (savedState) {
       restoreSession();
     } else {
-      syncAyahBounds();
       previewPracticeRange();
     }
 

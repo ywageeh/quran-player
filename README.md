@@ -11,6 +11,7 @@ Arabic-first Quran memorization player: pick a reciter and ayah range, listen wi
   - Click an ayah to hide or show it alone
   - Hover a hidden word for a temporary peek
   - `←` reveals the next hidden word in reading order
+- **Qiyam (قيام الليل)** — Pick a start surah/ayah and an end surah/ayah (or "to end of surah") plus a rakaa count; the range is split at ayah boundaries into rakaat of near-equal length, the current rakaa is highlighted on the mushaf, and «تمت الركعة» moves to the next. Progress survives a refresh and the screen is kept awake during a session
 - **Tafsir** — Side accordion of التفسير الميسّر; identical explanations are grouped with shared ayah numbers
 - **Navigation** — Page number plus previous / next (right = previous, left = next)
 - **Session restore** — Selections, hide state, last position, and theme persist across refresh
